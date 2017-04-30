@@ -15,7 +15,6 @@ class SAC(sublime_plugin.EventListener):
  
     def on_query_completions(self, view, prefix, locations):
  
-        if DEBUG: print("SAC: running completion query '{0}'".format(prefix))
         words = []
 
         buf = prefix.split('->')
@@ -24,12 +23,16 @@ class SAC(sublime_plugin.EventListener):
         if len(buf) <= 1 : 
             return words;
 
-        cls = self.resolvePHPClass(view, buf[0])
+        buf =  '->'.join(buf[0:-1])
+
+        if DEBUG: print("SAC: running completion query '{0}'".format(buf))
+
+        cls = self.resolvePHPClass(view, buf)
         methods =   self.lint(cls)
 
         for method in methods:
             # 第二个参数 $存在变量解析问题,需转义
-            words.append([self.prefix(buf[0], method), self.prefix(buf[0], method, True)])
+            words.append([self.prefix(buf, method), self.prefix(buf, method, True)])
         
         
         if DEBUG: print("SAC: {0} methods found".format(len(words)))
@@ -46,12 +49,43 @@ class SAC(sublime_plugin.EventListener):
 
         for position in mathes[::-1]:
             cls = v.substr(position).split('new')
-            word = cls[1].strip()
-            if DEBUG: print("SAC: class {0}  found".format(word))
+            word = self.resolvePHPClassName(v, cls[1].strip())
             return word
+
+    def resolvePHPClassName(self, v, cls):
+        # is contains namespace
+        if '\\' == cls[:1]:
+            return cls
+
+        # is php native class
+        if self.isPHPNativeClass(cls):
+            return cls
+        
+        # find in use or current namespace
+        return self.findClassInUse(v, cls)
+        
+    def findClassInUse(self, v, cls):
+        pattern = ''.join(['use([\s\S]+)', cls, ';'])
+        mathes = v.find_all(pattern)
+
+        for position in mathes[::-1]:
+            cls = v.substr(position).replace('use', '').replace(';', '')
+            word = cls.strip()
+            if DEBUG: print("SAC: class {0}  found (use)".format(word))
+            return word
+
+        pattern = ''.join(['namespace([^;]+)'])
+        mathes = v.find_all(pattern)
+
+        for position in mathes[::-1]:
+            return v.substr(position).replace('namespace', '').replace(';', '').strip()
+
+    def isPHPNativeClass(self, cls):
+        return False
 
     def lint(self, cls):
         sac_path = ''.join(['php "', PLUGIN_DIR , '\\sac.php', '" ', cls]) 
+        print(sac_path)
         p = subprocess.Popen(sac_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         output = p.communicate()[0]   
         if DEBUG: print("SAC: script output \n {0}  ".format(output))

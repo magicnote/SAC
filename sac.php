@@ -7,8 +7,8 @@ if (1 == $argc) {
 
 $cls = '\\' . trim($argv[1], ' \\');
 
-$reflection = new \ReflectionClass($cls);
 try {
+    $reflection = new \ReflectionClass($cls);
     print_r(json_encode(array_map(function ($item) {
         return $item->name;
     }, $reflection->getMethods())));
