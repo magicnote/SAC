@@ -6,7 +6,7 @@ import json
 
 PLUGIN_DIR = os.path.dirname(os.path.realpath(__file__))
 
-DEBUG = True
+DEBUG = False
 
 class SAC(sublime_plugin.EventListener):
 
@@ -14,7 +14,7 @@ class SAC(sublime_plugin.EventListener):
         if DEBUG: print("initializing SAC plugin")
  
     def on_query_completions(self, view, prefix, locations):
-
+ 
         if DEBUG: print("SAC: running completion query '{0}'".format(prefix))
         words = []
 
@@ -47,14 +47,14 @@ class SAC(sublime_plugin.EventListener):
         for position in mathes[::-1]:
             cls = v.substr(position).split('new')
             word = cls[1].strip()
-            if DEBUG: print("SAA: class {0}  found".format(word))
+            if DEBUG: print("SAC: class {0}  found".format(word))
             return word
 
     def lint(self, cls):
         sac_path = ''.join(['php "', PLUGIN_DIR , '\\sac.php', '" ', cls]) 
         p = subprocess.Popen(sac_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         output = p.communicate()[0]   
-        if DEBUG: print("SAA: script output \n {0}  ".format(output))
+        if DEBUG: print("SAC: script output \n {0}  ".format(output))
         return json.loads(str(output, 'utf8'))
 
     def prefix(self, prefix, method, safe = False):
