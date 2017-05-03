@@ -6,7 +6,7 @@ import json
 
 PLUGIN_DIR = os.path.dirname(os.path.realpath(__file__))
 
-DEBUG = False
+DEBUG = True
 
 class SAC(sublime_plugin.EventListener):
 
@@ -14,7 +14,7 @@ class SAC(sublime_plugin.EventListener):
         if DEBUG: print("initializing SAC plugin")
  
     def on_query_completions(self, view, prefix, locations):
- 
+    
         words = []
 
         buf = prefix.split('->')
@@ -28,12 +28,11 @@ class SAC(sublime_plugin.EventListener):
         if DEBUG: print("SAC: running completion query '{0}'".format(buf))
 
         cls = self.resolvePHPClass(view, buf)
-        methods =   self.lint(cls)
+        methods =   self.lint(view, cls)
 
         for method in methods:
             # 第二个参数 $存在变量解析问题,需转义
             words.append([self.prefix(buf, method), self.prefix(buf, method, True)])
-        
         
         if DEBUG: print("SAC: {0} methods found".format(len(words)))
 
@@ -65,7 +64,7 @@ class SAC(sublime_plugin.EventListener):
         return self.findClassInUse(v, cls)
         
     def findClassInUse(self, v, cls):
-        pattern = ''.join(['use([\s\S]+)', cls, ';'])
+        pattern = ''.join(['use([^\r\n]+)', cls, ';'])
         mathes = v.find_all(pattern)
 
         for position in mathes[::-1]:
@@ -83,17 +82,28 @@ class SAC(sublime_plugin.EventListener):
     def isPHPNativeClass(self, cls):
         return False
 
-    def lint(self, cls):
-        sac_path = ''.join(['php "', PLUGIN_DIR , '\\sac.php', '" ', cls]) 
-        print(sac_path)
+    def lint(self, view, cls):
+        project_path = self.getWorkspace(view)
+        sac_path = ''.join(['php "', PLUGIN_DIR , '\\sac.php', '" ', cls, ' "', project_path, '"']) 
         p = subprocess.Popen(sac_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         output = p.communicate()[0]   
-        if DEBUG: print("SAC: script output \n {0}  ".format(output))
-        return json.loads(str(output, 'utf8'))
+        if DEBUG: 
+            print("SAC: script input \n {0}  ".format(sac_path))
+            print("SAC: script output \n {0}  ".format(output))
+        try:
+            return json.loads(str(output, 'utf8'))
+        except Exception as e:
+            return [];
+
 
     def prefix(self, prefix, method, safe = False):
         buf = [prefix, '->' ,method]
         if safe : buf.insert(0, '\\')
         return ''.join(buf)
 
-   
+    def getWorkspace(self, v):
+        # matches first 
+        for folder in v.window().folders():
+            if v.file_name().find(folder) != -1:
+                return folder
+        return None

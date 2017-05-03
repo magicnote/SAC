@@ -1,10 +1,17 @@
 <?php
-require 'vendor/autoload.php';
 
 if (1 == $argc) {
     notfound();
 }
 
+$vendor = 'vendor/autoload.php';
+
+if (isset($argv[2])) {
+    $vendor = trim($argv[2], ' \\') . '\\' . $vendor;
+}
+ 
+require $vendor;
+ 
 $cls = '\\' . trim($argv[1], ' \\');
 
 try {
@@ -15,7 +22,6 @@ try {
 } catch (\Exception $e) {
     notfound();
 }
-
 
 function notfound()
 {
