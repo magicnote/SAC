@@ -9,9 +9,10 @@
 使用composer实现(后续研究仅针对composer, 放弃非composer项目)。  
 3. 类的解析(方法 常量 属性)  
 参见PHP的`ReflectionClass`类。 [see](https://secure.php.net/manual/zh/class.reflectionclass.php)  
-4. 针对单个项目定位`vendor`目录
+4. 针对单个项目定位`vendor`目录  
 目前规则是:匹配当前与当前文件路径相符的第一个项目目录,从该目录下寻找`vendor/autoload.php`  
 
 ##### TODO
 * 实现非new的方式取得的实例(方法返回的实例)，思路：解析 PHPDoc、PHPDocument等的`@return`注释
+* 实现`$this`的匹配
 
