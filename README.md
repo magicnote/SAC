@@ -16,3 +16,5 @@
 * 实现非new的方式取得的实例(方法返回的实例)，思路：解析 PHPDoc、PHPDocument等的`@return`注释
 * 实现`$this`的匹配
 
+#### License
+[MIT license](http://opensource.org/licenses/MIT)
